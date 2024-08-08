@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  gpu_container:
+    image: vad_litgao_base_image_12.3_u22.04_conda_jupyter_v1.3
+    container_name: vad_litgao_test_sam2_guid_jupyter_auto_restart
+    entrypoint: ["sh", "-c", "tail -f /dev/null"]
+    ports:
+      - "8788:8888"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              device_ids: ["1"]
+    mem_limit: 32g
+    memswap_limit: 128g
+    shm_size: '256g'
+    volumes:
+      - /disks/ssd2/litgao:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nvidia-smi || exit 1"]
+      start_period: 60s
+      interval: 20s
+      timeout: 5s
+      retries: 2
+    labels:
+      - autoheal=true
+      - autoheal.stop.timeout=1
+    restart: always
+
+  autoheal:
+    image: willfarrell/autoheal
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
